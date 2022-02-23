@@ -21,7 +21,7 @@ Defining the Hamiltonian
 H = \sum_j [X(j)X(j+1) + Y(j)Y(j+1) + Z(j)Z(j+1) + v(j)Z(j)]
 where v(j) is a scalar uniformly random between [-1, 1]
 """
-def hamiltonian(num_wires):
+def hamiltonian(num_wires, noise=False):
     H = np.zeros((2 ** num_wires, 2 ** num_wires),dtype='complex')
     x = np.array([[0, 1], [1, 0]])
     y = np.array([[0, complex(0, -1)], [complex(0, 1), 0]])
@@ -33,7 +33,10 @@ def hamiltonian(num_wires):
         Y = np.array([[1]])
         Z = np.array([[1]])
         W = np.array([[1]])
-        v = np.random.random() * 2 - 1
+        if noise:
+            v = np.random.random() * 2 - 1
+        else:
+            v = 0
 
         for k in range(0, num_wires):
             if k == i:
@@ -55,7 +58,10 @@ def hamiltonian(num_wires):
         H += X + Y + Z + v * W
 
     W = np.array([[1]])
-    v = np.random.random() * 2 - 1
+    if noise:
+        v = np.random.random() * 2 - 1
+    else:
+        v = 0 
     for k in range(0, num_wires - 1):
         W = np.kron(W, I)
     W = np.kron(W, z)
@@ -65,8 +71,8 @@ def hamiltonian(num_wires):
 """
 Unitary for e^{-iHt}
 """
-def unitarize(t, num_wires):
-    H = hamiltonian(num_wires)
+def unitarize(t, num_wires, noise=False):
+    H = hamiltonian(num_wires, noise)
     eigenval, eigenvec = np.linalg.eig(H)
     return eigenvec @ np.diag(np.exp(complex(0,-1) * t * eigenval)) @ np.linalg.inv(eigenvec)
 
@@ -87,7 +93,7 @@ def simulate(circuit):
     job = backend.run(circuit)
     result = job.result()
     output = result.get_statevector(circuit, decimals=3)
-    return output
+    return np.array(output)
 
 if __name__ == "__main__":
     np.random.seed(42)
@@ -104,4 +110,4 @@ if __name__ == "__main__":
     # op = qi.Operator(circ)
     # print(error(np.array(op), unitary))
     
-    print(simulate(circ))
+    print(simulate(circ).tolist())
