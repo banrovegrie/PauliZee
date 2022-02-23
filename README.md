@@ -1,0 +1,2 @@
+# PauliZee
+Simulating hamiltonian
