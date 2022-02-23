@@ -21,7 +21,7 @@ Defining the Hamiltonian
 H = \sum_j [X(j)X(j+1) + Y(j)Y(j+1) + Z(j)Z(j+1) + v(j)Z(j)]
 where v(j) is a scalar uniformly random between [-1, 1]
 """
-def hamiltonian():
+def hamiltonian(num_wires):
     H = np.zeros((2 ** num_wires, 2 ** num_wires),dtype='complex')
     x = np.array([[0, 1], [1, 0]])
     y = np.array([[0, complex(0, -1)], [complex(0, 1), 0]])
@@ -65,16 +65,17 @@ def hamiltonian():
 """
 Unitary for e^{-iHt}
 """
-def unitarize(t):
-    H = hamiltonian()
+def unitarize(t, num_wires):
+    H = hamiltonian(num_wires)
     eigenval, eigenvec = np.linalg.eig(H)
     return eigenvec @ np.diag(np.exp(complex(0,-1) * t * eigenval)) @ np.linalg.inv(eigenvec)
 
 """
 Defining the circuit
 """
-def make_circuit(U, t):
+def make_circuit(U, statevector, t, num_wires):
     circuit = QuantumCircuit(num_wires, num_wires)
+    circuit.initialize(statevector, circuit.qubits)
     circuit.unitary(U, list(range(0, num_wires)), label=f"exp(i{t}H)")
     return circuit
 
@@ -90,11 +91,14 @@ def simulate(circuit):
 
 if __name__ == "__main__":
     np.random.seed(42)
-    num_wires = 3
+
+    state = [0, 1, 0, 0, 0, 0, 1, 0]
+    state = state / np.linalg.norm(state)
+    num_wires = int(np.log2(len(state)))
     time = 2
 
-    unitary = unitarize(time)
-    circ = make_circuit(unitary, time)
+    unitary = unitarize(time, num_wires)
+    circ = make_circuit(unitary, state, time, num_wires)
     print(circ)
 
     # op = qi.Operator(circ)
