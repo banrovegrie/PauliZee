@@ -7,7 +7,8 @@ We are directly producing the matrix e^{-iHt} using
 eigenvalue decomposition of the hamiltonian H.
 """
 
-import qiskit
+import time
+from matplotlib import pyplot as plt
 from helpers import error
 import qiskit.quantum_info as qi
 import numpy as np
@@ -95,19 +96,42 @@ def simulate(circuit):
     output = result.get_statevector(circuit, decimals=3)
     return np.array(output)
 
-if __name__ == "__main__":
+"""
+Main execution
+"""
+def main(n=3, t=2, state=None):
     np.random.seed(42)
+    start_time = time.time()
 
-    state = [0, 1, 0, 0, 0, 0, 1, 0]
-    state = state / np.linalg.norm(state)
+    if state == None:
+        state = [0] * (2 ** n)
+        state[0] = 1
+        state = state / np.linalg.norm(state)
     num_wires = int(np.log2(len(state)))
-    time = 2
 
-    unitary = unitarize(time, num_wires)
-    circ = make_circuit(unitary, state, time, num_wires)
-    print(circ)
+    unitary = unitarize(t, num_wires)
+    circ = make_circuit(unitary, state, t, num_wires)
+    # print(circ)
 
-    # op = qi.Operator(circ)
-    # print(error(np.array(op), unitary))
+    res = simulate(circ).tolist()
+    # print(res)
+    return (time.time() - start_time), circ, res
+
+
+"""
+Performance comparision
+"""
+def performance():
+    timestamps = []
+    for n in range(3, 10):
+        total_time, circ, res = main(n=n, t=2, state=None)
+        timestamps.append(total_time)
+    plt.plot(range(3, 10), timestamps)
+    plt.xlabel("Number of qubits")
+    plt.ylabel("Time")
+    plt.title("Naive hamiltonian simulation")
+    plt.show()
     
-    print(simulate(circ).tolist())
+
+if __name__ == "__main__":
+    performance()
