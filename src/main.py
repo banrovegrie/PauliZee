@@ -14,16 +14,18 @@ from qiskit.providers import provider
 num_qubits = 3
 qubits_neighbours = list(range(num_qubits))
 time, r, noise = 2, 1000, np.random.uniform(-1, 1, 7)
-noise = [0.0] * num_qubits 
+noise = [0.0] * num_qubits
 state = np.array([0, 1, 0, 0, 0, 0, 1, 0])
 state = state / np.linalg.norm(state)
+
 
 def authenticate() -> provider.ProviderV1:
     IBMQ.save_account(config.TOKEN)
     IBMQ.load_account()
-    provider = IBMQ.get_provider(hub=config.HUB, group=config.GROUP, project=config.PROJECT)
+    provider = IBMQ.get_provider(
+        hub=config.HUB, group=config.GROUP, project=config.PROJECT
+    )
     return provider
-
 
 
 def get_naive_trotter_state() -> np.ndarray:
@@ -31,6 +33,7 @@ def get_naive_trotter_state() -> np.ndarray:
 
     state_vector = simulate(circuit)
     return state_vector
+
 
 def get_naive_state() -> np.ndarray:
     unitary = unitarize(time, num_qubits)
