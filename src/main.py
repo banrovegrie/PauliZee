@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Authored by team: PauliZee
 """
@@ -8,21 +7,16 @@ import numpy as np
 from naive import unitarize, make_circuit, simulate, simulate_measurement
 from trotter import construct_heisenberg
 from helpers import error
-from qiskit import IBMQ
-from qiskit.compiler import transpile
-import time
+from qiskit import IBMQ, execute
 import timeit
 import config as config
 from qiskit.providers import provider
-from qiskit.visualization import plot_histogram
 from matplotlib import pyplot as plt
 import qiskit.quantum_info as qi
 
 qubits_neighbours = [0, 1, 3, 5, 4]
-t, r, noise = 2, 100, np.random.uniform(-1, 1, 7)
-noise = [0.0] * max(7, num_qubits)
-state = np.array([0, 1, 0, 0, 0, 0, 1, 0])
-state = state / np.linalg.norm(state)
+t, r, noise = 2, 1000, np.random.uniform(-1, 1, 7)
+noise = [0.0] * 7
 
 
 def authenticate() -> provider.ProviderV1:
@@ -57,23 +51,17 @@ def get_trotter_state(get_matrix=False) -> np.ndarray:
     return state_vector
 
 
-def simulate_trotter(num_qubits, qubits_neighbours, t, r, noise, state) -> np.ndarray:
+def simulate_trotter(
+    num_qubits, qubits_neighbours, t, r, noise, state, shots=1024
+) -> np.ndarray:
     circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
 
-    counts = simulate_measurement(circuit)
-
+    counts = simulate_measurement(circuit, shots)
     print(f"classical measurements:{counts}")
-
-    probs = np.zeros(2**num_qubits)
-    for key in counts.keys():
-        key_val = int(key, 2)
-        probs[key_val] = counts[key]
-
-    print(f"classical {probs}")
-    return probs
+    return counts
 
 
-def get_naive_state(state, get_matrix=False) -> np.ndarray:
+def get_naive_state(state, num_qubits, get_matrix=False) -> np.ndarray:
     unitary = unitarize(t, num_qubits)
     circ = make_circuit(unitary, state, t, num_qubits)
     if get_matrix:
@@ -87,35 +75,47 @@ def get_naive_unsimulated(state) -> np.ndarray:
     return result_state
 
 
-def run_on_quantum_computer(
-    num_qubits, qubits_neighbours, t, r, noise, state, backend_name, provider
-) -> np.ndarray:
-    backend = provider.get_backend(backend_name)
-
-    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
-    transpiled_circuit = transpile(circuit, backend, optimization_level=0)
-
+def run_circuit_on_quantum(circuit, backend, shots=1024):
     print("running circuit")
-    result = provider.run_circuits(
-        transpiled_circuit, backend_name=backend_name, optimization_level=0
-    ).result()
-    print("running completed")
-    counts = result.get_counts()
+    result = execute(circuit, backend=backend, optimization_level=0, shots=shots)
+    assert result is not None
+    counts = result.result().get_counts(circuit)
+    return counts
 
-    print(f"quantum_computer:{counts}")
 
+def get_probs_from_count(counts, num_qubits):
     probs = np.zeros(2**num_qubits)
     for key in counts.keys():
         key_val = int(key, 2)
         probs[key_val] = counts[key]
-
-    print(f"quantum {probs}")
+    probs = probs / np.sum(probs)
     return probs
 
 
-def compare_on_quantum_computer(
-    range_qubits: List[int], run_quantum=False
+def run_on_quantum_computer(
+    num_qubits,
+    qubits_neighbours,
+    t,
+    r,
+    noise,
+    state,
+    backend_name,
+    provider,
+    shots=1024,
 ) -> np.ndarray:
+    backend = provider.get_backend(backend_name)
+
+    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
+    # transpiled_circuit = transpile(circuit, backend, optimization_level=0)
+
+    return run_circuit_on_quantum(circuit, backend, shots)
+    # return run_circuit_on_quantum(transpiled_circuit, backend)
+
+
+def compare_on_quantum_computer(
+    range_qubits: List[int], run_quantum=False, shots=1024
+) -> dict:
+    print(f"running on r={r}")
 
     backend_name = "ibm_perth"
     provider = None
@@ -124,7 +124,7 @@ def compare_on_quantum_computer(
         provider = authenticate()
         print("Auth complete")
 
-    all_probs_c = []
+    all_probs_cc = []
     state_lists = []
     for num_qubits in range_qubits:
         state = np.random.rand(2**num_qubits)
@@ -136,29 +136,40 @@ def compare_on_quantum_computer(
         # cur_neighbours = qubits_neighbours[:num_qubits]
         cur_neighbours = list(range(num_qubits))
 
-        probs_c = simulate_trotter(num_qubits, cur_neighbours, t, r, noise, state_vec)
-        all_probs_c.append(probs_c)
+        probs_c = get_probs(get_naive_state(state_vec, num_qubits))
+        all_probs_cc.append(probs_c)
 
     if not run_quantum:
-        return np.array(all_probs_c)
+        return {"cc": all_probs_cc}
 
-    all_probs_q = []
+    all_probs_qq = []
+    all_probs_qc = []
     num_qubits = 7  # setting the number of qubits to the same as ibm_perth.
-    for ind in range_qubits:
+    for ind, state in enumerate(state_lists):
+        num_qubits = range_qubits[ind]
         print(f"running for {num_qubits} on quantum computer")
         cur_neighbours = qubits_neighbours[:ind]
-        state = np.random.rand(2**num_qubits)
-        state = state / np.linalg.norm(state)
-        probs_q = run_on_quantum_computer(
-            num_qubits, cur_neighbours, t, r, noise, state, backend_name, provider
+        probs_q = get_probs_from_count(
+            run_on_quantum_computer(
+                num_qubits,
+                cur_neighbours,
+                t,
+                r,
+                noise,
+                state,
+                backend_name,
+                provider,
+                shots=shots,
+            ),
+            num_qubits,
         )
-        all_probs_q.append(probs_q)
+        all_probs_qq.append(probs_q)
+        probs_q = get_probs_from_count(
+            simulate_trotter(num_qubits, cur_neighbours, t, r, noise, state), num_qubits
+        )
+        all_probs_qc.append(probs_q)
 
-    errors = []
-    for ind, q in enumerate(all_probs_q):
-        errors.append(error(q, all_probs_c[ind]))
-
-    return np.array(errors)
+    return {"qq": all_probs_qq, "cc": all_probs_qc, "qc": all_probs_qc}
 
 
 def normalize(vec):
@@ -203,4 +214,3 @@ def performance(l, r, is_normalize=False, get_matrix=False):
 if __name__ == "__main__":
     np.random.seed(42)
     performance(3, 10, is_normalize=False, get_matrix=False)
-    # compare_on_quantum_computer([3], run_quantum=True)
