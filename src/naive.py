@@ -143,10 +143,10 @@ Performance comparision
 
 def performance():
     timestamps = []
-    for n in range(3, 10):
+    for n in range(2, 6):
         total_time, circ, res = main(n=n, t=2, state=None)
         timestamps.append(total_time)
-    plt.plot(range(3, 10), timestamps)
+    plt.plot(range(2, 6), timestamps)
     plt.xlabel("Number of qubits")
     plt.ylabel("Time")
     plt.title("Naive hamiltonian simulation")
