@@ -53,19 +53,15 @@ def get_matrix_rep(circuit):
 
 
 def get_trotter_state(get_matrix=False) -> np.ndarray:
-    circuit = construct_heisenberg(
-        num_qubits, qubits_neighbours, t, r, noise, state)
+    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
     if get_matrix:
         matrix = get_matrix_rep(circuit)
     state_vector = simulate(circuit)
     return state_vector
 
 
-def simulate_trotter(
-    num_qubits, qubits_neighbours, t, r, noise, state
-) -> np.ndarray:
-    circuit = construct_heisenberg(
-        num_qubits, qubits_neighbours, t, r, noise, state)
+def simulate_trotter(num_qubits, qubits_neighbours, t, r, noise, state) -> np.ndarray:
+    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
 
     counts = simulate_measurement(circuit)
 
@@ -99,8 +95,7 @@ def run_on_quantum_computer(
 ) -> np.ndarray:
     backend = provider.get_backend(backend_name)
 
-    circuit = construct_heisenberg(
-        num_qubits, qubits_neighbours, t, r, noise, state)
+    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
     transpiled_circuit = transpile(circuit, backend, optimization_level=0)
 
     print("running circuit")
@@ -144,9 +139,7 @@ def compare_on_quantum_computer(
         # cur_neighbours = qubits_neighbours[:num_qubits]
         cur_neighbours = list(range(num_qubits))
 
-        probs_c = simulate_trotter(
-            num_qubits, cur_neighbours, t, r, noise, state_vec
-        )
+        probs_c = simulate_trotter(num_qubits, cur_neighbours, t, r, noise, state_vec)
         all_probs_c.append(probs_c)
 
     if not run_quantum:
