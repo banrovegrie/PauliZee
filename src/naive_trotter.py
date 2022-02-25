@@ -51,7 +51,7 @@ def construct_heisenberg(
         for ind, cur_qubit in enumerate(qubits_neighbours):
             apply_one_noise(circuit, cur_qubit, coeff * noise[ind])
 
-        # circuit.measure(list(range(num_qubits)), list(range(num_qubits)))
+    circuit.measure(list(range(num_qubits)), list(range(num_qubits)))
     return circuit
 
 

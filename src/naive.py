@@ -112,6 +112,14 @@ def simulate(circuit):
     return np.array(output)
 
 
+def simulate_measurement(circuit):
+    backend = Aer.get_backend("qasm_simulator", shots=1024)
+    job = backend.run(circuit)
+    result = job.result()
+    output = result.get_counts()
+    return output
+
+
 """
 Main execution
 """
