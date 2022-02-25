@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import qiskit.quantum_info as qi
 
 qubits_neighbours = [0, 1, 3, 5, 4]
-t, r, noise = 2, 1000, np.random.uniform(-1, 1, 7)
+t, noise = 2, np.random.uniform(-1, 1, 7)
 noise = [0.0] * 7
 
 
@@ -113,7 +113,7 @@ def run_on_quantum_computer(
 
 
 def compare_on_quantum_computer(
-    range_qubits: List[int], run_quantum=False, shots=1024
+    range_qubits: List[int], run_quantum=False, shots=1024, r=1
 ) -> dict:
     print(f"running on r={r}")
 
@@ -169,7 +169,7 @@ def compare_on_quantum_computer(
         )
         all_probs_qc.append(probs_q)
 
-    return {"qq": all_probs_qq, "cc": all_probs_qc, "qc": all_probs_qc}
+    return {"qq": all_probs_qq, "cc": all_probs_cc, "qc": all_probs_qc}
 
 
 def normalize(vec):
