@@ -22,21 +22,20 @@ def simulate(circuit):
 def normalize(vec):
     return vec / np.linalg.norm(vec)
 
-def initialize():
-    n = 3
-    times = 4
+n = 3
+times = 4
 
-    qnodes = QuantumRegister(n,'qr')
-    qsubnodes = QuantumRegister(1,'qanc')
-    cnodes = ClassicalRegister(n,'cr')
-    csubnodes = ClassicalRegister(1,'canc')
+qnodes = QuantumRegister(n,'qr')
+qsubnodes = QuantumRegister(1,'qanc')
+cnodes = ClassicalRegister(n,'cr')
+csubnodes = ClassicalRegister(1,'canc')
 
-    circuit = QuantumCircuit(qnodes, qsubnodes, cnodes, csubnodes)
-    initial_state = [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1]
-    initial_state = normalize(initial_state)
-    circuit.initialize(initial_state, circuit.qubits)
-    print(circuit)
-    return circuit, qnodes, qsubnodes
+circuit = QuantumCircuit(qnodes, qsubnodes, cnodes, csubnodes)
+initial_state = [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1]
+initial_state = normalize(initial_state)
+circuit.initialize(initial_state, circuit.qubits)
+print(circuit)
+
 
 def increment(circuit, q, qanc):
     circuit.mcx([q[0], q[1], q[2]], qanc)
