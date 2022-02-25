@@ -6,15 +6,17 @@ from typing import List
 from helpers import get_probs
 import numpy as np
 from naive import unitarize, make_circuit, simulate, simulate_measurement
-from naive_trotter import construct_heisenberg
+from trotter import construct_heisenberg
 from helpers import error
 from qiskit import IBMQ
 from qiskit.compiler import transpile
 import time
+import timeit
 import config as config
 from qiskit.providers import provider
 from qiskit.visualization import plot_histogram
 from matplotlib import pyplot as plt
+import qiskit.quantum_info as qi
 
 state = []
 num_qubits = 3
@@ -46,17 +48,24 @@ def initialize(n):
     state = state / np.linalg.norm(state)
 
 
-def get_naive_trotter_state() -> np.ndarray:
-    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
+def get_matrix_rep(circuit):
+    return qi.Operator(circuit)
 
+
+def get_trotter_state(get_matrix=False) -> np.ndarray:
+    circuit = construct_heisenberg(
+        num_qubits, qubits_neighbours, t, r, noise, state)
+    if get_matrix:
+        matrix = get_matrix_rep(circuit)
     state_vector = simulate(circuit)
     return state_vector
 
 
-def simulate_naive_trotter(
+def simulate_trotter(
     num_qubits, qubits_neighbours, t, r, noise, state
 ) -> np.ndarray:
-    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
+    circuit = construct_heisenberg(
+        num_qubits, qubits_neighbours, t, r, noise, state)
 
     counts = simulate_measurement(circuit)
 
@@ -71,11 +80,18 @@ def simulate_naive_trotter(
     return probs
 
 
-def get_naive_state(state) -> np.ndarray:
+def get_naive_state(state, get_matrix=False) -> np.ndarray:
     unitary = unitarize(t, num_qubits)
     circ = make_circuit(unitary, state, t, num_qubits)
-
+    if get_matrix:
+        matrix = get_matrix_rep(circ)
     return simulate(circ)
+
+
+def get_naive_unsimulated(state) -> np.ndarray:
+    unitary = unitarize(t, num_qubits)
+    result_state = unitary @ state
+    return result_state
 
 
 def run_on_quantum_computer(
@@ -83,7 +99,8 @@ def run_on_quantum_computer(
 ) -> np.ndarray:
     backend = provider.get_backend(backend_name)
 
-    circuit = construct_heisenberg(num_qubits, qubits_neighbours, t, r, noise, state)
+    circuit = construct_heisenberg(
+        num_qubits, qubits_neighbours, t, r, noise, state)
     transpiled_circuit = transpile(circuit, backend, optimization_level=0)
 
     print("running circuit")
@@ -127,7 +144,7 @@ def compare_on_quantum_computer(
         # cur_neighbours = qubits_neighbours[:num_qubits]
         cur_neighbours = list(range(num_qubits))
 
-        probs_c = simulate_naive_trotter(
+        probs_c = simulate_trotter(
             num_qubits, cur_neighbours, t, r, noise, state_vec
         )
         all_probs_c.append(probs_c)
@@ -136,7 +153,7 @@ def compare_on_quantum_computer(
         return np.array(all_probs_c)
 
     all_probs_q = []
-    num_qubits = 7 # setting the number of qubits to the same as ibm_perth.
+    num_qubits = 7  # setting the number of qubits to the same as ibm_perth.
     for ind in range_qubits:
         print(f"running for {num_qubits=} on quantum computer")
         cur_neighbours = qubits_neighbours[:ind]
@@ -161,24 +178,31 @@ def normalize(vec):
         return 0
 
 
-def performance(l, r, is_normalize=False):
+def performance(l, r, is_normalize=False, get_matrix=False):
     timestamps_naive = []
-    timestamps_naivetrotter = []
+    timestamps_trotter = []
+    timestamps_unsimulated = []
     for n in range(l, r):
         initialize(n)
-        start_time = time.time()
-        naive_trotter_state = get_naive_trotter_state()
-        timestamps_naivetrotter.append(time.time() - start_time)
+        start_time = timeit.default_timer()
+        trotter_state = get_trotter_state(get_matrix)
+        timestamps_trotter.append(timeit.default_timer() - start_time)
 
-        start_time = time.time()
-        naive_state = get_naive_state(state)
-        timestamps_naive.append(time.time() - start_time)
+        start_time = timeit.default_timer()
+        naive_state = get_naive_state(state, get_matrix)
+        timestamps_naive.append(timeit.default_timer() - start_time)
+
+        start_time = timeit.default_timer()
+        naive_unsimulated = get_naive_unsimulated(state)
+        timestamps_unsimulated.append(timeit.default_timer() - start_time)
 
     if is_normalize:
         timestamps_naive = normalize(timestamps_naive)
-        timestamps_naivetrotter = normalize(timestamps_naivetrotter)
-    plt.plot(range(l, r), timestamps_naivetrotter, label="naive trotter")
-    plt.plot(range(l, r), timestamps_naive, label="naive")
+        timestamps_trotter = normalize(timestamps_trotter)
+        timestamps_unsimulated = normalize(timestamps_unsimulated)
+    plt.plot(range(l, r), timestamps_trotter, label="Trotter")
+    plt.plot(range(l, r), timestamps_naive, label="Naive")
+    plt.plot(range(l, r), timestamps_unsimulated, label="Unsimualted")
     plt.legend()
     plt.xlabel("Number of qubits")
     plt.ylabel("Time")
@@ -188,4 +212,5 @@ def performance(l, r, is_normalize=False):
 
 if __name__ == "__main__":
     np.random.seed(42)
-    compare_on_quantum_computer([3], run_quantum=True)
+    performance(3, 10, is_normalize=False, get_matrix=False)
+    # compare_on_quantum_computer([3], run_quantum=True)
