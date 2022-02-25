@@ -16,9 +16,6 @@ from qiskit.providers import provider
 from qiskit.visualization import plot_histogram
 from matplotlib import pyplot as plt
 
-state = []
-num_qubits = 3
-
 qubits_neighbours = [0, 1, 3, 5, 4]
 t, r, noise = 2, 100, np.random.uniform(-1, 1, 7)
 noise = [0.0] * max(7, num_qubits)
@@ -67,7 +64,7 @@ def simulate_naive_trotter(
         key_val = int(key, 2)
         probs[key_val] = counts[key]
 
-    print(f"classical {probs=}")
+    print(f"classical {probs}")
     return probs
 
 
@@ -100,7 +97,7 @@ def run_on_quantum_computer(
         key_val = int(key, 2)
         probs[key_val] = counts[key]
 
-    print(f"quantum {probs=}")
+    print(f"quantum {probs}")
     return probs
 
 
@@ -136,9 +133,9 @@ def compare_on_quantum_computer(
         return np.array(all_probs_c)
 
     all_probs_q = []
-    num_qubits = 7 # setting the number of qubits to the same as ibm_perth.
+    num_qubits = 7  # setting the number of qubits to the same as ibm_perth.
     for ind in range_qubits:
-        print(f"running for {num_qubits=} on quantum computer")
+        print(f"running for {num_qubits} on quantum computer")
         cur_neighbours = qubits_neighbours[:ind]
         state = np.random.rand(2**num_qubits)
         state = state / np.linalg.norm(state)

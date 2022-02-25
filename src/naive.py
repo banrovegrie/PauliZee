@@ -137,10 +137,8 @@ def main(n=3, t=2, state=None):
 
     unitary = unitarize(t, num_wires)
     circ = make_circuit(unitary, state, t, num_wires)
-    # print(circ)
 
     res = simulate(circ).tolist()
-    # print(res)
     return (time.time() - start_time), circ, res
 
 
