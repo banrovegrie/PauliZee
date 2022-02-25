@@ -45,7 +45,7 @@ def U(P):
                 [
                     np.outer(
                         np.kron(get_vector(j, N), get_vector(k, N)),
-                        np.kron(get_vector(j, N), get_vector(k, N))) for k in range(N)
+                        np.kron(get_vector(k, N), get_vector(j, N))) for k in range(N)
                 ]) for j in range(N)
         ]
     )
