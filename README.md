@@ -1,8 +1,10 @@
-# Fast Hamiltonian
+# Fast Hamiltonian Simulation
 
-### Team ⇒ PauliZ
+**Team Name**: PauliZ
 
 We simulated the Hamiltonian of the Heisenberg Spin Chain model using topologically optimized Trotterisation on a 7-qubit IBM quantum computer. We then compare the results of this simulation with purely-classical Hamiltonian simulation and classically Trotterised Hamiltonian simulation.
+
+![comparision](images/benchmarking.png)
 
 ## IBM’s Quantum Simulation
 
@@ -11,8 +13,6 @@ It was required to check how well Trotter’s method performs in terms of an err
 As $r$ increases, the number of gates increases which means that the error rate grows. But due to a better approximation of larger $r$ values, the overall error rate becomes lesser even for a noisy quantum computer.
 
 ![trotter_plot.png](images/trotter_plot.png)
-
----
 
 ### References
 
