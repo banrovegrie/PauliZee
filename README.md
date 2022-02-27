@@ -10,9 +10,9 @@ We simulated the Hamiltonian of the Heisenberg Spin Chain model using topologica
 
 It was required to check how well Trotter’s method performs in terms of an error on an actual computer with the computed naive method. The error rate clearly goes down even for a noisy quantum computer.
 
-As $r$ increases, the number of gates increases which means that the error rate grows. But due to a better approximation of larger $r$ values, the overall error rate becomes lesser even for a noisy quantum computer.
+As `r` increases, the number of gates increases which means that the error rate grows. But due to a better approximation of larger `r` values, the overall error rate becomes lesser even for a noisy quantum computer.
 
-![trotter_plot.png](images/trotter_plot.png)
+<img src="images/trotter_plot.png" alt="" width="500" height="300" />
 
 ### References
 
